@@ -29,6 +29,8 @@ st.set_page_config(
 )
 
 # Emotion mapping from detection model to mood tracker
+CHAT_FILE = "chat_data.json"
+
 EMOTION_TO_MOOD = {
     "happy": "Good",
     "neutral": "Neutral",
@@ -43,20 +45,17 @@ EMOTION_TO_MOOD = {
 
 
 def load_chat():
-    if not os.path.exists("chat_data.json"):
-        return []
-
     try:
-        with open("chat_data.json", "r") as file:
+        with open(CHAT_FILE, "r", encoding="utf-8") as file:
             messages = json.load(file)
             return messages if isinstance(messages, list) else []
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
 
 
 def save_chat(messages):
-    with open("chat_data.json", "w") as file:
-        json.dump(messages, file, indent=2)
+    with open(CHAT_FILE, "w", encoding="utf-8") as f:
+        json.dump(messages, f, ensure_ascii=False, indent=2)
 
 
 def should_escalate(user_input):
@@ -72,10 +71,6 @@ def should_escalate(user_input):
 
 # Initialize ALL session state variables properly
 def init_session_state():
-    # Chat history
-    if 'conversation_history' not in st.session_state:
-        st.session_state['conversation_history'] = load_chat()
-    
     # Mood tracking
     if 'mood_track' not in st.session_state:
         st.session_state['mood_track'] = []
@@ -436,7 +431,6 @@ def generate_response(user_input):
             chat_history.append({"role": "user", "content": user_input})
             chat_history.append({"role": "assistant", "content": ai_response})
             save_chat(chat_history)
-            st.session_state['conversation_history'] = chat_history
             
             # Calculate response time
             response_time = time.time() - start_time
@@ -720,6 +714,10 @@ def main():
 
     # Chat interface
     st.subheader("💬 Talk with CONSULO")
+    if st.session_state.get('agent_mode', 'AI') == 'AI':
+        st.info("🤖 AI is responding")
+    else:
+        st.info("👨‍⚕️ Therapist connected")
     
     # Modern chat container
     chat_container = st.container()
@@ -756,7 +754,7 @@ def main():
         user_message = st.chat_input("Share your thoughts or ask for support...")
     
     # Voice input button directly in the chat
-    if st.session_state.voice_enabled and st.session_state.voice_listening_mode:
+    if st.session_state.get('role', 'USER') != 'THERAPIST' and st.session_state.voice_enabled and st.session_state.voice_listening_mode:
         voice_col1, voice_col2 = st.columns([1, 9])
         with voice_col1:
             if st.button("🎤", help="Click to speak"):
@@ -767,7 +765,7 @@ def main():
                         st.rerun()
     
     # Check if there's voice input
-    if 'spoken_input' in st.session_state and st.session_state['spoken_input']:
+    if st.session_state.get('role', 'USER') != 'THERAPIST' and 'spoken_input' in st.session_state and st.session_state['spoken_input']:
         user_message = st.session_state['spoken_input']
         st.session_state['spoken_input'] = None
     
@@ -776,25 +774,6 @@ def main():
         text_to_speech(st.session_state['last_response_spoken'])
         st.session_state['last_response_spoken'] = None
     
-    if st.session_state.get('role', 'USER') == 'THERAPIST':
-        st.subheader("👨‍⚕️ Therapist Reply")
-        therapist_reply = st.text_input(
-            "Type therapist response",
-            key="therapist_reply_input",
-            placeholder="Write the therapist reply here..."
-        )
-
-        if st.button("Send", use_container_width=True):
-            if therapist_reply.strip():
-                chat_history = load_chat()
-                chat_history.append({"role": "assistant", "content": f"👨‍⚕️ Therapist: {therapist_reply.strip()}"})
-                save_chat(chat_history)
-                st.session_state['conversation_history'] = chat_history
-                st.session_state['therapist_reply_input'] = ""
-                st.rerun()
-            else:
-                st.warning("Enter a therapist reply before sending.")
-
     if user_message:
         # Display user message
         with st.chat_message("user"):
@@ -804,15 +783,12 @@ def main():
             chat_history = load_chat()
             chat_history.append({"role": "user", "content": user_message})
             st.session_state['agent_mode'] = 'THERAPIST'
-            chat_history.append({"role": "system", "content": "Connecting to therapist..."})
+            chat_history.append({"role": "assistant", "content": "👨‍⚕️ Connecting to therapist..."})
             save_chat(chat_history)
-            st.session_state['conversation_history'] = chat_history
-            st.info("Connecting to therapist...")
         elif st.session_state.get('agent_mode', 'AI') == 'THERAPIST':
             chat_history = load_chat()
             chat_history.append({"role": "user", "content": user_message})
             save_chat(chat_history)
-            st.session_state['conversation_history'] = chat_history
             st.info("Therapist mode is active. Waiting for therapist response.")
         else:
             # Generate AI response
@@ -824,6 +800,11 @@ def main():
                 if st.session_state.voice_enabled and VOICE_AVAILABLE:
                     text_to_speech(ai_response)
                     st.session_state['last_response_spoken'] = None
+
+    if st.session_state.get('agent_mode', 'AI') == 'THERAPIST':
+        st.caption("↻ Waiting for therapist response...")
+        time.sleep(2)
+        st.rerun()
 
     # Compact emergency support section
     st.markdown("---")
