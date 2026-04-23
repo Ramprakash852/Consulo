@@ -58,6 +58,15 @@ def save_chat(messages):
         json.dump(messages, f, ensure_ascii=False, indent=2)
 
 
+def clear_chat():
+    try:
+        with open(CHAT_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f, ensure_ascii=False, indent=2)
+        return True
+    except OSError:
+        return False
+
+
 def should_escalate(user_input):
     if st.session_state.mood_data.get('current_mood') == 'Very Low':
         return True
@@ -149,6 +158,13 @@ def role_selector():
     )
 
     st.session_state['role'] = selected_role
+
+    if st.sidebar.button("🆕 Start New Session", use_container_width=True):
+        if clear_chat():
+            st.session_state['agent_mode'] = "AI"
+            st.rerun()
+        else:
+            st.sidebar.error("Could not clear chat history. Please try again.")
 
 
 # Text-to-speech function
@@ -789,7 +805,6 @@ def main():
             chat_history = load_chat()
             chat_history.append({"role": "user", "content": user_message})
             save_chat(chat_history)
-            st.info("Therapist mode is active. Waiting for therapist response.")
         else:
             # Generate AI response
             with st.chat_message("assistant"):
@@ -802,7 +817,6 @@ def main():
                     st.session_state['last_response_spoken'] = None
 
     if st.session_state.get('agent_mode', 'AI') == 'THERAPIST':
-        st.caption("↻ Waiting for therapist response...")
         time.sleep(2)
         st.rerun()
 

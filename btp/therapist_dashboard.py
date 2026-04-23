@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import streamlit as st
 
@@ -42,6 +43,7 @@ def render_chat(messages):
 
 st.title("👨‍⚕️ Therapist Dashboard")
 st.caption("Read and reply to the shared chat file.")
+st.caption("🔄 Auto-refreshing every 2 seconds...")
 
 col1, col2 = st.columns([1, 4])
 with col1:
@@ -55,8 +57,18 @@ st.divider()
 st.subheader("Therapist Reply")
 therapist_reply = st.chat_input("Type therapist reply...")
 
+# Mark typing state
+if therapist_reply:
+    st.session_state["typing"] = True
+else:
+    st.session_state["typing"] = False
+
 if therapist_reply:
     chat_history = load_chat()
     chat_history.append({"role": "assistant", "content": f"👨‍⚕️ Therapist: {therapist_reply.strip()}"})
     save_chat(chat_history)
+    st.rerun()
+
+if not st.session_state.get("typing", False):
+    time.sleep(2)
     st.rerun()
