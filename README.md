@@ -1,13 +1,4 @@
-I'll create a comprehensive project report focused on the build structure and design decisions.  
-
-Read [](file:///c%3A/Users/chitt/Downloads/Facial%20Emotion%20Detection/Facial%20Emotion%20Detection/btp/calmconnect.py#32-32), lines 32 to 45
-
-Read [](file:///c%3A/Users/chitt/Downloads/Facial%20Emotion%20Detection/Facial%20Emotion%20Detection/archive/data.yaml)
-
----
-
-# **BTP PROJECT REPORT**
-## **Facial Emotion Detection AI Mental Health Companion**
+# **Facial Emotion Detection AI Mental Health Companion**
 
 ---
 
