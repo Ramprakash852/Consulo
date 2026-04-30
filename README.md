@@ -4,7 +4,7 @@
 
 ## **1. PROJECT OVERVIEW**
 
-**Project Name:** CONSULO: Personal AI Therapist (BTP - Bachelor of Technology Project)
+**Project Name:** CONSULO: Personal AI Therapist
 
 **Objective:** Build an end-to-end system that detects facial emotions from webcam input and uses that data to provide real-time mental health support, mood tracking, and therapeutic guidance through an AI-powered conversational interface.
 
@@ -782,7 +782,7 @@ streamlit run calmconnect.py
 
 ## **13. CONCLUSION**
 
-The BTP project demonstrates a modern approach to mental health support by combining:
+This project demonstrates a modern approach to mental health support by combining:
 - **Computer Vision** (emotion detection)
 - **Distributed Systems** (async APIs, file-based IPC)
 - **NLP/LLM** (context-aware chatbot)
