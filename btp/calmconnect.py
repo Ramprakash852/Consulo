@@ -68,15 +68,64 @@ def clear_chat():
 
 
 def should_escalate(user_input):
-    if st.session_state.mood_data.get('current_mood') == 'Very Low':
-        return True
-
     if not user_input:
         return False
 
-    keywords = ['suicide', 'hopeless', 'depressed']
     text = user_input.lower()
-    return any(keyword in text for keyword in keywords)
+    chat_history = load_chat() or []
+
+    score = 0
+
+    # 🔴 HIGH-RISK (instant)
+    high_risk = ["suicide", "kill myself", "end my life", "self harm"]
+    if any(k in text for k in high_risk):
+        return True
+
+    # 🟡 MEDIUM-RISK
+    medium_risk = ["hopeless", "depressed", "worthless", "empty"]
+    if any(k in text for k in medium_risk):
+        score += 2
+
+    # 🟡 NEGATIVE WORDS
+    negative_words = ["sad", "tired", "lost", "stressed", "anxious"]
+    if any(k in text for k in negative_words):
+        score += 1
+
+    # 🧠 CONVERSATION PATTERN
+    recent = chat_history[-5:]
+    negative_count = 0
+
+    for msg in recent:
+        content = msg.get("content", "").lower()
+        if any(word in content for word in negative_words + medium_risk):
+            negative_count += 1
+
+    if negative_count >= 3:
+        score += 2
+
+    # 💔 MOOD SIGNAL
+    mood = st.session_state.mood_data.get('current_mood')
+    if mood == "Very Low":
+        score += 3
+    elif mood == "Low":
+        score += 1
+
+    # 🤖 AI STRUGGLE
+    generic_phrases = ["i understand", "that sounds difficult", "i'm here for you"]
+
+    ai_repeat = 0
+    for msg in recent:
+        if msg.get("role") == "assistant":
+            content = msg.get("content", "").lower()
+            if any(p in content for p in generic_phrases):
+                ai_repeat += 1
+
+    if ai_repeat >= 2:
+        score += 1
+
+    print("Escalation score:", score)
+
+    return score >= 5
 
 # Initialize ALL session state variables properly
 def init_session_state():
